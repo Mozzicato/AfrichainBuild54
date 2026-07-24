@@ -331,9 +331,23 @@ function safeParse(argsJson: string): ToolInput {
   }
 }
 
-export async function runAgent(transcript: string): Promise<AgentResult> {
+function modeInstruction(mode?: string): string {
+  if (mode === "sales") {
+    return "Current voice mode: SALES LOGGING. Prefer record_sale, record_debt, settle_debt, record_expense, or daily_report. If an item/quantity/amount is unclear, ask one short clarification before recording.";
+  }
+  if (mode === "prices") {
+    return "Current voice mode: LIVE MARKET PRICES. Prefer market_lookup for price questions and submit_price when the trader reports a price from a market. Be strict about commodity, market, and price.";
+  }
+  if (mode === "inventory") {
+    return "Current voice mode: INVENTORY. Prefer restock, check_stock, or record_sale when stock is sold. Treat phrases like 'add to stock', 'I bought', 'remaining', and 'what is finishing' as inventory actions.";
+  }
+  return "Current voice mode: GENERAL. Choose the best tool based on the trader's words.";
+}
+
+export async function runAgent(transcript: string, mode?: string): Promise<AgentResult> {
   const messages: ChatMessage[] = [
     { role: "system", content: SYSTEM },
+    { role: "system", content: modeInstruction(mode) },
     { role: "user", content: transcript },
   ];
   let market: MarketResult | null = null;

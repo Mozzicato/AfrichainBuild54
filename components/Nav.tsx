@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/", label: "Talk", eyebrow: "Voice" },
   { href: "/business", label: "Business", eyebrow: "Books" },
   { href: "/market", label: "Market", eyebrow: "AMIN" },
+  { href: "/receipts", label: "Receipts", eyebrow: "PDF" },
 ];
 
 export default function Nav() {
@@ -41,7 +42,7 @@ export default function Nav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition sm:px-4 ${
+                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium transition sm:px-4 ${
                   active ? "bg-gold text-green-2" : "text-cream/80 hover:text-cream"
                 }`}
               >

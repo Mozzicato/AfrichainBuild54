@@ -2,6 +2,7 @@
 
 import type { BusinessState } from "@/lib/types";
 import { NGN } from "@/lib/format";
+import InventoryTable from "@/components/InventoryTable";
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
@@ -90,29 +91,16 @@ export default function BusinessDashboard({ state }: { state: BusinessState | nu
         )}
       </div>
 
-      <div className="card p-4">
+      <div className="md:col-span-2">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">Stock</h2>
+          <h2 className="eyebrow">Inventory table</h2>
           {state.lowStock.length > 0 && (
             <span className="rounded-full bg-terracotta/15 px-2 py-0.5 text-[10px] font-semibold text-terracotta">
               {state.lowStock.length} running low
             </span>
           )}
         </div>
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-          {state.inventory.map((item) => {
-            const low = item.qty <= item.lowAt;
-            return (
-              <li key={item.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className={low ? "font-medium text-terracotta" : ""}>{item.item}</span>
-                <span className={`font-semibold ${low ? "text-terracotta" : ""}`}>
-                  {item.qty} {item.unit}
-                  {low && " low"}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <InventoryTable items={state.inventory} />
       </div>
 
       <div className="card p-4">

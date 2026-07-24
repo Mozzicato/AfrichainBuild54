@@ -5,6 +5,7 @@ interface SpeechRecognitionResultLike {
 }
 interface SpeechRecognitionEventLike extends Event {
   results: ArrayLike<SpeechRecognitionResultLike>;
+  resultIndex?: number;
 }
 interface SpeechRecognitionLike extends EventTarget {
   lang: string;

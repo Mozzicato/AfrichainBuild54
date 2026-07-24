@@ -6,11 +6,11 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const { transcript } = await req.json();
+    const { transcript, mode } = await req.json();
     if (!transcript || typeof transcript !== "string") {
       return NextResponse.json({ error: "Missing transcript" }, { status: 400 });
     }
-    const result = await runAgent(transcript);
+    const result = await runAgent(transcript, typeof mode === "string" ? mode : undefined);
     return NextResponse.json(result);
   } catch (err) {
     console.error(err);
