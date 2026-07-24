@@ -163,6 +163,23 @@ export function getPriceOverrides(commodityQ: string): PriceOverrides {
   return out;
 }
 
+// All of today's trader reports grouped by commodity.
+export function getAllPriceOverrides(): Record<string, PriceOverrides> {
+  const db = load();
+  const t0 = startOfToday();
+  const out: Record<string, PriceOverrides> = {};
+  for (const r of db.priceReports) {
+    if (r.ts < t0) continue;
+    (out[r.commodity] ||= {})[r.market] = r.price;
+  }
+  return out;
+}
+
+export function recentPriceReports(limit = 8) {
+  const db = load();
+  return [...db.priceReports].sort((a, b) => b.ts - a.ts).slice(0, limit);
+}
+
 export function dailyReport(): string {
   const db = load();
   const t0 = startOfToday();

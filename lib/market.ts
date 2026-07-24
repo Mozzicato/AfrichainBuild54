@@ -178,3 +178,87 @@ export class CuratedMarketSource implements MarketSource {
 }
 
 export const marketSource: MarketSource = new CuratedMarketSource();
+
+// ---- Live feed (demo) ----
+// Simulates a live market data stream: prices drift over time so successive
+// polls tick up and down. Crowdsourced trader reports are folded in and flagged.
+// In production this same shape is produced by real feeds behind MarketSource.
+
+export type LiveQuote = {
+  market: string;
+  price: number;
+  base: number;
+  dir: "up" | "down" | "flat";
+  reported: boolean;
+};
+
+export type LiveCommodity = {
+  commodity: string;
+  unit: string;
+  quotes: LiveQuote[]; // sorted cheapest -> most expensive
+  cheapest: LiveQuote;
+  highest: LiveQuote;
+  average: number;
+  reportCount: number;
+};
+
+export type LiveSnapshot = {
+  commodities: LiveCommodity[];
+  updatedAt: number;
+};
+
+function hash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1000;
+  return h;
+}
+
+function jitter(base: number, seedStr: string): number {
+  const t = Date.now();
+  const seed = hash(seedStr);
+  const slow = Math.sin(t / 22000 + seed); // slow trend
+  const fast = Math.sin(t / 4000 + seed * 7); // faster wobble
+  const factor = 1 + 0.035 * slow + 0.012 * fast;
+  return Math.round((base * factor) / 10) * 10; // nearest ₦10
+}
+
+export function liveSnapshot(
+  overridesByCommodity?: Record<string, PriceOverrides>
+): LiveSnapshot {
+  const commodities: LiveCommodity[] = Object.entries(DATA).map(([commodity, row]) => {
+    const overrides = overridesByCommodity?.[commodity] || {};
+    const merged: Record<string, { price: number; base: number; reported: boolean }> = {};
+
+    for (const [market, base] of Object.entries(row.markets)) {
+      const price = jitter(base, commodity + market);
+      merged[market] = { price, base, reported: false };
+    }
+    let reportCount = 0;
+    for (const [market, price] of Object.entries(overrides)) {
+      merged[market] = { price, base: merged[market]?.base ?? price, reported: true };
+      reportCount++;
+    }
+
+    const quotes: LiveQuote[] = Object.entries(merged)
+      .map(([market, v]) => {
+        const delta = v.price - v.base;
+        const dir: LiveQuote["dir"] =
+          v.reported || Math.abs(delta) < v.base * 0.006 ? "flat" : delta > 0 ? "up" : "down";
+        return { market, price: v.price, base: v.base, dir, reported: v.reported };
+      })
+      .sort((a, b) => a.price - b.price);
+
+    const average = Math.round(quotes.reduce((a, q) => a + q.price, 0) / quotes.length);
+    return {
+      commodity,
+      unit: row.unit,
+      quotes,
+      cheapest: quotes[0],
+      highest: quotes[quotes.length - 1],
+      average,
+      reportCount,
+    };
+  });
+
+  return { commodities, updatedAt: Date.now() };
+}
