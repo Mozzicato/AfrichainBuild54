@@ -12,7 +12,7 @@ type Turn = { role: "you" | "africhain"; text: string; mode?: Mode };
 
 const LANGS = [
   { code: "en-NG", label: "English / Pidgin" },
-  { code: "yo-NG", label: "Yorùbá" },
+  { code: "yo-NG", label: "Yoruba" },
   { code: "ha-NG", label: "Hausa" },
   { code: "ig-NG", label: "Igbo" },
 ];
@@ -157,7 +157,7 @@ export default function TalkPage() {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Something went wrong";
         setErr(msg);
-        setTurns((items) => [...items, { role: "africhain", text: `⚠️ ${msg}`, mode }]);
+        setTurns((items) => [...items, { role: "africhain", text: `Warning: ${msg}`, mode }]);
       } finally {
         setThinking(false);
       }
@@ -298,23 +298,23 @@ export default function TalkPage() {
             <button
               onClick={listening ? stopListening : startListening}
               disabled={thinking}
-              className={`grid h-32 w-32 place-items-center rounded-full text-4xl text-cream shadow-lg transition-transform active:scale-95 disabled:opacity-50 ${
+              className={`grid h-32 w-32 place-items-center rounded-full text-2xl font-black text-cream shadow-lg transition-transform active:scale-95 disabled:opacity-50 ${
                 listening ? "listening bg-terracotta" : "bg-green hover:scale-[1.03] hover:bg-green-2"
               }`}
               style={{ boxShadow: "var(--shadow-lg)" }}
               aria-label={listening ? "Stop recording" : "Start recording"}
             >
-              {listening ? "■" : "🎙️"}
+              {listening ? "Stop" : "Mic"}
             </button>
             <p className="mt-4 h-5 text-sm font-medium text-muted">
-              {thinking ? "Africhain dey think…" : listening ? "Listening… tap again when done" : "Tap and speak"}
+              {thinking ? "Africhain dey think..." : listening ? "Listening... tap again when done" : "Tap and speak"}
             </p>
-            {transcript && <p className="fade-up mt-1 text-center font-medium text-ink">“{transcript}”</p>}
+            {transcript && <p className="fade-up mt-1 text-center font-medium text-ink">&quot;{transcript}&quot;</p>}
           </div>
 
           {!supported && (
             <p className="mt-4 text-center text-xs text-terracotta">
-              Voice is not supported in this browser — use Chrome, or type below.
+              Voice is not supported in this browser - use Chrome, or type below.
             </p>
           )}
 
@@ -364,9 +364,9 @@ export default function TalkPage() {
                   onClick={() => send(example)}
                   className="rounded-xl border border-line bg-surface-sunken px-3.5 py-2.5 text-left text-sm text-ink transition hover:border-green hover:bg-white"
                 >
-                  <span className="mr-1.5 text-muted">“</span>
+                  <span className="mr-1.5 text-muted">&quot;</span>
                   {example}
-                  <span className="ml-0.5 text-muted">”</span>
+                  <span className="ml-0.5 text-muted">&quot;</span>
                 </button>
               ))}
             </div>
@@ -409,16 +409,16 @@ export default function TalkPage() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-bold">{state?.business || "Your shop"}</h2>
             <Link href="/business" className="text-xs font-semibold text-green hover:underline">
-              Full dashboard →
+              Full dashboard -&gt;
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-2.5">
-            <Mini label="Today revenue" value={state ? NGN(state.today.revenue) : "—"} accent="var(--green)" />
-            <Mini label="Profit" value={state ? NGN(state.today.profit) : "—"} accent="var(--green-2)" />
-            <Mini label="Sales" value={state ? String(state.today.salesCount) : "—"} />
+            <Mini label="Today revenue" value={state ? NGN(state.today.revenue) : "-"} accent="var(--green)" />
+            <Mini label="Profit" value={state ? NGN(state.today.profit) : "-"} accent="var(--green-2)" />
+            <Mini label="Sales" value={state ? String(state.today.salesCount) : "-"} />
             <Mini
               label="Owed to you"
-              value={state ? NGN(state.totals.outstandingDebt) : "—"}
+              value={state ? NGN(state.totals.outstandingDebt) : "-"}
               accent="var(--terracotta)"
             />
           </div>
@@ -428,7 +428,7 @@ export default function TalkPage() {
           <div className="mb-3 flex items-center justify-between">
             <p className="eyebrow">Stock watch</p>
             <Link href="/business" className="text-xs font-semibold text-green hover:underline">
-              Inventory →
+              Inventory -&gt;
             </Link>
           </div>
           {lowStock.length === 0 ? (
@@ -456,7 +456,7 @@ export default function TalkPage() {
             </p>
             <p>
               <span className="font-semibold text-green-2">Say the key numbers last:</span>{" "}
-              “six paint of rice, nine thousand naira” is easier to confirm.
+              &quot;six paint of rice, nine thousand naira&quot; is easier to confirm.
             </p>
             <p>
               <span className="font-semibold text-green-2">Check the transcript:</span>{" "}
@@ -488,7 +488,7 @@ export default function TalkPage() {
               <p className="text-xs text-muted">Download a PDF from any recent sale</p>
             </div>
             <span className="text-sm font-semibold text-green transition group-hover:translate-x-0.5">
-              Open →
+              Open -&gt;
             </span>
           </div>
         </Link>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { InventoryItem } from "@/lib/types";
 
@@ -6,7 +6,7 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-line bg-surface-sunken p-6 text-center text-sm text-muted">
-        No stock yet. Use Inventory voice mode and say “Add ten bags of rice to stock.”
+        No stock yet. Use Inventory voice mode and say &quot;Add ten bags of rice to stock.&quot;
       </div>
     );
   }
