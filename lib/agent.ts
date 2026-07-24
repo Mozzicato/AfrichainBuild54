@@ -7,6 +7,8 @@ import {
   completeTask,
   restockItem,
   dailyReport,
+  submitPrice,
+  getPriceOverrides,
   getState,
   coachInsight,
 } from "./store";
@@ -32,6 +34,7 @@ RULES:
 - After tools run, give ONE short, warm spoken confirmation or answer — like a trusted shop assistant, not a robot.
 - CRITICAL: reply in the SAME language and register the user used. If they speak Pidgin, answer in Pidgin. If Yoruba, answer in Yoruba. Match their vibe. Keep it to 1–2 sentences — it will be read aloud.
 - Naira amounts: say them naturally (e.g. "nine thousand naira").
+- Market prices: if the user ASKS a price ("how much yam for Sokoto?") use market_lookup. If the user REPORTS a price they saw in their market ("yam na 5200 for Kano today") use submit_price to feed the AMIN network.
 - If you truly cannot tell what they want, ask one short clarifying question in their language.`;
 
 const tools: ToolDef[] = [
@@ -199,6 +202,22 @@ const tools: ToolDef[] = [
   {
     type: "function",
     function: {
+      name: "submit_price",
+      description: "Record a market price the trader is reporting from their own market today, to feed the AMIN network. Use when the user states what a commodity costs in a specific market (e.g. 'yam na 5200 for Kano today').",
+      parameters: {
+        type: "object",
+        properties: {
+          commodity: { type: "string", description: "e.g. yam, rice, tomato" },
+          market: { type: "string", description: "the market/town the price is from, e.g. Kano, Ibadan" },
+          price: { type: "number", description: "reported price in naira" },
+        },
+        required: ["commodity", "market", "price"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "get_coach_insight",
       description: "Give a proactive, data-driven business tip based on the trader's own records.",
       parameters: { type: "object", properties: {} },
@@ -258,11 +277,23 @@ function runTool(name: string, input: ToolInput): { result: string; market?: Mar
       return { result: `Today: revenue ₦${st.today.revenue.toLocaleString()}, expenses ₦${st.today.expenses.toLocaleString()}, profit ₦${st.today.profit.toLocaleString()}. ${st.totals.outstandingDebt > 0 ? `People owe you ₦${st.totals.outstandingDebt.toLocaleString()}.` : ""} ${st.totals.openTasks} open task(s).` };
     }
     case "market_lookup": {
-      const m = marketSource.lookup(str(input.commodity), str(input.market) || undefined);
+      const commodity = str(input.commodity);
+      const overrides = getPriceOverrides(commodity);
+      const m = marketSource.lookup(commodity, str(input.market) || undefined, overrides);
       if (!m) return { result: `I don't have market data for that commodity yet.`, market: null };
       const list = m.quotes.map((q) => `${q.market} ₦${q.price.toLocaleString()}`).join(", ");
+      const live = m.reportCount > 0 ? ` (${m.reportCount} live trader report${m.reportCount === 1 ? "" : "s"} today)` : "";
       return {
-        result: `${m.commodity} (${m.unit}) today: ${list}. ${m.recommendation}`,
+        result: `${m.commodity} (${m.unit}) today${live}: ${list}. ${m.recommendation}`,
+        market: m,
+      };
+    }
+    case "submit_price": {
+      const rep = submitPrice(str(input.commodity), str(input.market), num(input.price));
+      const overrides = getPriceOverrides(rep.commodity);
+      const m = marketSource.lookup(rep.commodity, rep.market, overrides);
+      return {
+        result: `Thank you! I don update AMIN — ${rep.commodity} for ${rep.market} na ₦${rep.price.toLocaleString()} today. Other traders go see am.`,
         market: m,
       };
     }

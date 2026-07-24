@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { DB, BusinessState, Sale, Expense, Debt, Task, InventoryItem } from "./types";
+import { DB, BusinessState, Sale, Expense, Debt, Task, InventoryItem, PriceReport } from "./types";
+import { normalizeCommodity, normalizeMarket, PriceOverrides } from "./market";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "db.json");
@@ -51,6 +52,7 @@ function seed(): DB {
       { id: id(), item: "groundnut oil", qty: 8, unit: "bottle", lowAt: 6 },
       { id: id(), item: "maggi", qty: 5, unit: "roll", lowAt: 4 },
     ],
+    priceReports: [],
   };
 }
 
@@ -130,6 +132,35 @@ export function restockItem(item: string, qty: number, unit?: string): Inventory
 
 function lowStockItems(db: DB): InventoryItem[] {
   return db.inventory.filter((i) => i.qty <= i.lowAt);
+}
+
+// ---- AMIN crowdsourced prices ----
+
+export function submitPrice(
+  commodityQ: string,
+  marketQ: string,
+  price: number,
+  by?: string
+): { commodity: string; market: string; price: number } {
+  const db = load();
+  const commodity = normalizeCommodity(commodityQ) || commodityQ.trim().toLowerCase();
+  const market = normalizeMarket(marketQ);
+  const r: PriceReport = { id: id(), commodity, market, price, by, ts: Date.now() };
+  db.priceReports.push(r);
+  persist();
+  return { commodity, market, price };
+}
+
+// Today's trader-reported prices for a commodity, latest-per-market.
+export function getPriceOverrides(commodityQ: string): PriceOverrides {
+  const db = load();
+  const commodity = normalizeCommodity(commodityQ) || commodityQ.trim().toLowerCase();
+  const t0 = startOfToday();
+  const out: PriceOverrides = {};
+  for (const r of db.priceReports) {
+    if (r.commodity === commodity && r.ts >= t0) out[r.market] = r.price; // last write wins
+  }
+  return out;
 }
 
 export function dailyReport(): string {

@@ -39,6 +39,15 @@ export type InventoryItem = {
   lowAt: number; // low-stock threshold
 };
 
+export type PriceReport = {
+  id: string;
+  commodity: string;
+  market: string;
+  price: number;
+  by?: string;
+  ts: number;
+};
+
 export type DB = {
   business: string;
   sales: Sale[];
@@ -46,6 +55,7 @@ export type DB = {
   debts: Debt[];
   tasks: Task[];
   inventory: InventoryItem[];
+  priceReports: PriceReport[];
 };
 
 export type BusinessState = {

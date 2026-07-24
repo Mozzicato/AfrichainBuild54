@@ -10,6 +10,7 @@ export type PriceQuote = {
   price: number; // naira per unit
   unit: string;
   updated: string; // human label, e.g. "today"
+  reported: boolean; // true if this price came from a trader submission
 };
 
 export type MarketResult = {
@@ -21,10 +22,14 @@ export type MarketResult = {
   average: number;
   recommendation: string;
   source: "curated" | "live";
+  reportCount: number; // trader submissions folded into this result today
 };
 
+// Trader-submitted overrides for one commodity: { market: price }
+export type PriceOverrides = Record<string, number>;
+
 export interface MarketSource {
-  lookup(commodityQuery: string, marketQuery?: string): MarketResult | null;
+  lookup(commodityQuery: string, marketQuery?: string, overrides?: PriceOverrides): MarketResult | null;
   commodities(): string[];
 }
 
@@ -78,7 +83,7 @@ const ALIASES: Record<string, string> = {
   "palmoil": "palm oil",
 };
 
-function normalizeCommodity(q: string): string | null {
+export function normalizeCommodity(q: string): string | null {
   const s = q.trim().toLowerCase();
   if (DATA[s]) return s;
   if (ALIASES[s]) return ALIASES[s];
@@ -87,6 +92,16 @@ function normalizeCommodity(q: string): string | null {
   if (key) return key;
   const alias = Object.keys(ALIASES).find((a) => s.includes(a));
   return alias ? ALIASES[alias] : null;
+}
+
+// Known markets, or a Title-cased new one (crowdsourcing can add markets).
+export function normalizeMarket(q: string): string {
+  const s = q.trim().toLowerCase();
+  const all = new Set<string>();
+  Object.values(DATA).forEach((r) => Object.keys(r.markets).forEach((m) => all.add(m)));
+  const found = [...all].find((m) => m.toLowerCase() === s || s.includes(m.toLowerCase()));
+  if (found) return found;
+  return q.trim().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function titleMarket(q: string): string | null {
@@ -102,13 +117,32 @@ export class CuratedMarketSource implements MarketSource {
     return Object.keys(DATA);
   }
 
-  lookup(commodityQuery: string, marketQuery?: string): MarketResult | null {
+  lookup(commodityQuery: string, marketQuery?: string, overrides?: PriceOverrides): MarketResult | null {
     const commodity = normalizeCommodity(commodityQuery);
     if (!commodity) return null;
     const row = DATA[commodity];
 
-    const quotes: PriceQuote[] = Object.entries(row.markets)
-      .map(([market, price]) => ({ market, price, unit: row.unit, updated: "today" }))
+    // Merge curated base with today's trader reports (reports win, can add markets).
+    const merged: Record<string, { price: number; reported: boolean }> = {};
+    for (const [market, price] of Object.entries(row.markets)) {
+      merged[market] = { price, reported: false };
+    }
+    let reportCount = 0;
+    if (overrides) {
+      for (const [market, price] of Object.entries(overrides)) {
+        merged[market] = { price, reported: true };
+        reportCount++;
+      }
+    }
+
+    const quotes: PriceQuote[] = Object.entries(merged)
+      .map(([market, v]) => ({
+        market,
+        price: v.price,
+        unit: row.unit,
+        updated: v.reported ? "trader report" : "today",
+        reported: v.reported,
+      }))
       .sort((a, b) => a.price - b.price);
 
     const cheapest = quotes[0];
@@ -137,7 +171,8 @@ export class CuratedMarketSource implements MarketSource {
       highest,
       average,
       recommendation,
-      source: "curated",
+      source: reportCount > 0 ? "live" : "curated",
+      reportCount,
     };
   }
 }
