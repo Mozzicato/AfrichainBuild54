@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cream: #f7f3e8;
+  --cream-2: #efe7d3;
+  --ink: #22201a;
+  --muted: #6b6455;
+  --green: #1f6b4a;
+  --green-2: #164f37;
+  --gold: #e0a12e;
+  --gold-2: #c8871a;
+  --terracotta: #c65a2e;
+  --line: #e3d9c2;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-green: var(--green);
+  --color-gold: var(--gold);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--cream);
+  color: var(--ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* pulsing mic while listening */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(198, 90, 46, 0.45); }
+  70% { box-shadow: 0 0 0 22px rgba(198, 90, 46, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(198, 90, 46, 0); }
+}
+.listening {
+  animation: pulse-ring 1.4s infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fade-up 0.28s ease-out;
+}
+
+/* thinking dots */
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+.dot { animation: blink 1.2s infinite both; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* shimmer for AMIN bars */
+@keyframes grow {
+  from { width: 0; }
+}
+.bar-grow { animation: grow 0.5s ease-out; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
