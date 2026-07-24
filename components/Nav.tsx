@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const LINKS = [
-  { href: "/", label: "Talk", icon: "🎙" },
-  { href: "/business", label: "Business", icon: "📊" },
-  { href: "/market", label: "Market", icon: "🌍" },
+  { href: "/", label: "Talk", eyebrow: "Voice" },
+  { href: "/business", label: "Business", eyebrow: "Books" },
+  { href: "/market", label: "Market", eyebrow: "AMIN" },
 ];
 
 export default function Nav() {
@@ -25,30 +25,30 @@ export default function Nav() {
   };
 
   return (
-    <header className="sticky top-0 z-20 bg-[var(--green-2)] shadow-sm">
-      <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="h-8 w-8 rounded-lg bg-[var(--gold)] grid place-items-center text-[var(--green-2)] font-black">
+    <header className="sticky top-0 z-20 bg-green-2 shadow-sm">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-gold font-black text-green-2">
             A
           </div>
-          <span className="text-cream font-bold hidden sm:inline">Africhain</span>
+          <span className="hidden font-bold text-cream sm:inline">Africhain</span>
         </Link>
 
-        <nav className="flex items-center gap-1 bg-black/15 rounded-full p-1">
-          {LINKS.map((l) => {
-            const active = pathname === l.href;
+        <nav className="flex items-center gap-1 rounded-full bg-black/15 p-1">
+          {LINKS.map((link) => {
+            const active = pathname === link.href;
             return (
               <Link
-                key={l.href}
-                href={l.href}
-                className={`px-3 sm:px-4 py-1.5 rounded-full text-sm font-medium transition flex items-center gap-1.5 ${
-                  active
-                    ? "bg-[var(--gold)] text-[var(--green-2)]"
-                    : "text-cream/80 hover:text-cream"
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition sm:px-4 ${
+                  active ? "bg-gold text-green-2" : "text-cream/80 hover:text-cream"
                 }`}
               >
-                <span>{l.icon}</span>
-                <span>{l.label}</span>
+                <span>{link.label}</span>
+                <span className="hidden text-[10px] uppercase tracking-wide opacity-70 sm:inline">
+                  {link.eyebrow}
+                </span>
               </Link>
             );
           })}
@@ -57,7 +57,7 @@ export default function Nav() {
         <button
           onClick={reset}
           disabled={resetting}
-          className="text-xs px-3 py-1.5 rounded-lg bg-cream/10 hover:bg-cream/20 text-cream transition disabled:opacity-50 shrink-0"
+          className="shrink-0 rounded-lg bg-cream/10 px-3 py-1.5 text-xs text-cream transition hover:bg-cream/20 disabled:opacity-50"
         >
           {resetting ? "…" : "Reset"}
         </button>

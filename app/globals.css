@@ -11,24 +11,67 @@
   --gold-2: #c8871a;
   --terracotta: #c65a2e;
   --line: #e3d9c2;
+
+  --surface: #ffffff;
+  --surface-sunken: #fbf8ef;
+  --shadow-sm: 0 1px 2px rgba(34, 32, 26, 0.05), 0 1px 3px rgba(34, 32, 26, 0.04);
+  --shadow-md: 0 4px 12px rgba(34, 32, 26, 0.07), 0 2px 4px rgba(34, 32, 26, 0.04);
+  --shadow-lg: 0 12px 32px rgba(22, 79, 55, 0.12), 0 4px 8px rgba(34, 32, 26, 0.05);
 }
 
 @theme inline {
   --color-cream: var(--cream);
+  --color-cream-2: var(--cream-2);
   --color-ink: var(--ink);
+  --color-muted: var(--muted);
   --color-green: var(--green);
+  --color-green-2: var(--green-2);
   --color-gold: var(--gold);
+  --color-gold-2: var(--gold-2);
+  --color-terracotta: var(--terracotta);
+  --color-line: var(--line);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
   --font-sans: var(--font-geist-sans);
 }
 
 html,
 body {
-  background: var(--cream);
   color: var(--ink);
 }
 
 body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  /* warm layered backdrop instead of flat cream */
+  background:
+    radial-gradient(1100px 600px at 15% -10%, rgba(224, 161, 46, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(31, 107, 74, 0.08), transparent 55%),
+    var(--cream);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Reusable surface — gives cards real depth vs. flat white/60 */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* focus ring for keyboard users */
+:where(button, a, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* pulsing mic while listening */
@@ -64,5 +107,14 @@ body {
 }
 .bar-grow { animation: grow 0.5s ease-out; }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-2); }

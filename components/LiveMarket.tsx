@@ -13,9 +13,9 @@ type Snap = {
 };
 
 function Arrow({ dir }: { dir: LiveQuote["dir"] }) {
-  if (dir === "up") return <span className="text-[var(--green)] text-xs">▲</span>;
-  if (dir === "down") return <span className="text-[var(--terracotta)] text-xs">▼</span>;
-  return <span className="text-[var(--muted)] text-xs">–</span>;
+  if (dir === "up") return <span className="text-xs text-green">▲</span>;
+  if (dir === "down") return <span className="text-xs text-terracotta">▼</span>;
+  return <span className="text-xs text-muted">–</span>;
 }
 
 export default function LiveMarket() {
@@ -36,7 +36,7 @@ export default function LiveMarket() {
     };
     load();
     const poll = setInterval(load, 4000);
-    const clock = setInterval(() => tick((n) => n + 1), 1000); // refresh "updated Xs ago"
+    const clock = setInterval(() => tick((n) => n + 1), 1000);
     return () => {
       alive = false;
       clearInterval(poll);
@@ -44,73 +44,70 @@ export default function LiveMarket() {
     };
   }, []);
 
-  if (!snap) return <p className="text-sm text-[var(--muted)]">Loading live market…</p>;
+  if (!snap) return <p className="text-sm text-muted">Loading live market…</p>;
 
-  const sel = snap.commodities.find((c) => c.commodity === selected) || snap.commodities[0];
+  const sel = snap.commodities.find((commodity) => commodity.commodity === selected) || snap.commodities[0];
   const max = sel.highest.price;
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-2">
+      <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--green-2)]">AMIN Live</h1>
-          <p className="text-sm text-[var(--muted)]">
+          <h1 className="text-2xl font-bold text-green-2">AMIN Live</h1>
+          <p className="text-sm text-muted">
             Africhain Market Intelligence Network — prices across Nigeria&apos;s markets
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--green)]/15 text-[var(--green)] font-semibold">
-            <span className="h-2 w-2 rounded-full bg-[var(--green)] listening inline-block" />
+          <span className="flex items-center gap-1.5 rounded-full bg-green/15 px-2.5 py-1 font-semibold text-green">
+            <span className="listening inline-block h-2 w-2 rounded-full bg-green" />
             LIVE
           </span>
-          <span className="text-[var(--muted)]">updated {timeAgo(snap.updatedAt)}</span>
+          <span className="text-muted">updated {timeAgo(snap.updatedAt)}</span>
         </div>
       </div>
 
-      {/* Ticker strip */}
-      <div className="rounded-xl bg-[var(--green-2)] text-cream px-3 py-2 overflow-x-auto">
-        <div className="flex gap-5 min-w-max text-sm">
-          {snap.commodities.map((c) => (
+      <div className="overflow-x-auto rounded-xl bg-green-2 px-3 py-2 text-cream">
+        <div className="flex min-w-max gap-5 text-sm">
+          {snap.commodities.map((commodity) => (
             <button
-              key={c.commodity}
-              onClick={() => setSelected(c.commodity)}
-              className="flex items-center gap-1.5 whitespace-nowrap hover:text-[var(--gold)] transition"
+              key={commodity.commodity}
+              onClick={() => setSelected(commodity.commodity)}
+              className="flex items-center gap-1.5 whitespace-nowrap transition hover:text-gold"
             >
-              <span className="font-semibold capitalize">{c.commodity}</span>
-              <span className="text-cream/80">{NGN(c.cheapest.price)}</span>
-              <Arrow dir={c.cheapest.dir} />
+              <span className="font-semibold capitalize">{commodity.commodity}</span>
+              <span className="text-cream/80">{NGN(commodity.cheapest.price)}</span>
+              <Arrow dir={commodity.cheapest.dir} />
             </button>
           ))}
         </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
-        {/* Commodity list */}
-        <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-3 shadow-sm h-max">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)] px-1 mb-2">
+        <div className="card h-max p-3">
+          <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted">
             Commodities
           </h2>
           <ul className="flex flex-col">
-            {snap.commodities.map((c) => {
-              const active = c.commodity === sel.commodity;
+            {snap.commodities.map((commodity) => {
+              const active = commodity.commodity === sel.commodity;
               return (
-                <li key={c.commodity}>
+                <li key={commodity.commodity}>
                   <button
-                    onClick={() => setSelected(c.commodity)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition ${
-                      active ? "bg-[var(--green)] text-cream" : "hover:bg-[var(--cream-2)]"
+                    onClick={() => setSelected(commodity.commodity)}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
+                      active ? "bg-green text-cream" : "hover:bg-cream-2"
                     }`}
                   >
-                    <span className="capitalize font-medium flex items-center gap-1.5">
-                      {c.commodity}
-                      {c.reportCount > 0 && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--gold)] inline-block" />
+                    <span className="flex items-center gap-1.5 font-medium capitalize">
+                      {commodity.commodity}
+                      {commodity.reportCount > 0 && (
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-gold" />
                       )}
                     </span>
                     <span className="flex items-center gap-1">
-                      {NGN(c.cheapest.price)}
-                      <Arrow dir={c.cheapest.dir} />
+                      {NGN(commodity.cheapest.price)}
+                      <Arrow dir={commodity.cheapest.dir} />
                     </span>
                   </button>
                 </li>
@@ -119,87 +116,85 @@ export default function LiveMarket() {
           </ul>
         </div>
 
-        {/* Selected commodity detail */}
-        <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="text-lg font-bold capitalize text-[var(--green-2)]">
+        <div className="card p-5">
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="text-lg font-bold capitalize text-green-2">
               {sel.commodity}{" "}
-              <span className="text-sm font-normal text-[var(--muted)]">({sel.unit})</span>
+              <span className="text-sm font-normal text-muted">({sel.unit})</span>
             </h2>
-            <span className="text-xs text-[var(--muted)]">avg {NGN(sel.average)}</span>
+            <span className="text-xs text-muted">avg {NGN(sel.average)}</span>
           </div>
           {sel.reportCount > 0 && (
-            <p className="text-xs text-[var(--green)] font-medium mb-3">
-              🟢 {sel.reportCount} live trader report{sel.reportCount === 1 ? "" : "s"} folded in
+            <p className="mb-3 text-xs font-medium text-green">
+              {sel.reportCount} live trader report{sel.reportCount === 1 ? "" : "s"} folded in
             </p>
           )}
 
-          <div className="flex flex-col gap-2 mt-3">
-            {sel.quotes.map((q) => {
-              const pct = Math.max(Math.round((q.price / max) * 100), 22);
-              const isLow = q.market === sel.cheapest.market;
-              const isHigh = q.market === sel.highest.market;
+          <div className="mt-3 flex flex-col gap-2">
+            {sel.quotes.map((quote) => {
+              const pct = Math.max(Math.round((quote.price / max) * 100), 22);
+              const isLow = quote.market === sel.cheapest.market;
+              const isHigh = quote.market === sel.highest.market;
               return (
-                <div key={q.market} className="flex items-center gap-3">
-                  <span className="w-20 text-sm font-medium flex items-center gap-1">
-                    {q.reported && <span className="h-1.5 w-1.5 rounded-full bg-[var(--gold)] inline-block" />}
-                    {q.market}
+                <div key={quote.market} className="flex items-center gap-3">
+                  <span className="flex w-20 items-center gap-1 text-sm font-medium">
+                    {quote.reported && <span className="inline-block h-1.5 w-1.5 rounded-full bg-gold" />}
+                    {quote.market}
                   </span>
-                  <div className="flex-1 h-7 rounded-md bg-[var(--cream-2)] overflow-hidden">
+                  <div className="h-7 flex-1 overflow-hidden rounded-md bg-cream-2">
                     <div
-                      className="h-full rounded-md flex items-center justify-end px-2 text-[11px] font-semibold text-white transition-all duration-700"
+                      className="flex h-full items-center justify-end rounded-md px-2 text-[11px] font-semibold text-white transition-all duration-700"
                       style={{
                         width: `${pct}%`,
                         background: isLow ? "var(--green)" : isHigh ? "var(--terracotta)" : "var(--gold-2)",
                       }}
                     >
-                      {NGN(q.price)}
+                      {NGN(quote.price)}
                     </div>
                   </div>
                   <span className="w-6 text-center">
-                    <Arrow dir={q.dir} />
+                    <Arrow dir={quote.dir} />
                   </span>
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-4 rounded-lg bg-[var(--green)]/10 border border-[var(--green)]/20 p-3">
-            <p className="text-sm text-[var(--green-2)]">
-              <span className="font-semibold">💡 </span>
-              Cheapest is <b className="capitalize">{sel.cheapest.market}</b> at {NGN(sel.cheapest.price)}
-              ; dearest is <b className="capitalize">{sel.highest.market}</b> at {NGN(sel.highest.price)}. Buy
-              in {sel.cheapest.market}, sell where price is high.
+          <div className="mt-4 rounded-lg border border-green/20 bg-green/10 p-3">
+            <p className="text-sm text-green-2">
+              <span className="font-semibold">Insight: </span>
+              Cheapest is <b className="capitalize">{sel.cheapest.market}</b> at {NGN(sel.cheapest.price)};
+              dearest is <b className="capitalize">{sel.highest.market}</b> at {NGN(sel.highest.price)}.
+              Buy in {sel.cheapest.market}, sell where price is high.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Recent trader reports */}
-      <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+      <div className="card p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
             Live trader reports
           </h2>
-          <Link href="/" className="text-xs font-semibold text-[var(--green)] hover:underline">
-            🎙 Report a price →
+          <Link href="/" className="text-xs font-semibold text-green hover:underline">
+            Report a price →
           </Link>
         </div>
         {snap.reports.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">
+          <p className="text-sm text-muted">
             No reports yet today. Go to <b>Talk</b> and say something like “Yam na 5,200 for Kano
             today” — it updates this feed live.
           </p>
         ) : (
-          <ul className="flex flex-col divide-y divide-[var(--line)]">
-            {snap.reports.map((r) => (
-              <li key={r.id} className="flex items-center justify-between py-1.5 text-sm">
+          <ul className="flex flex-col divide-y divide-line">
+            {snap.reports.map((report) => (
+              <li key={report.id} className="flex items-center justify-between gap-3 py-1.5 text-sm">
                 <span className="capitalize">
-                  <b>{r.market}</b> · {r.commodity}
+                  <b>{report.market}</b> · {report.commodity}
                 </span>
                 <span className="flex items-center gap-3">
-                  <span className="font-semibold text-[var(--green)]">{NGN(r.price)}</span>
-                  <span className="text-[11px] text-[var(--muted)]">{timeAgo(r.ts)}</span>
+                  <span className="font-semibold text-green">{NGN(report.price)}</span>
+                  <span className="text-[11px] text-muted">{timeAgo(report.ts)}</span>
                 </span>
               </li>
             ))}

@@ -30,6 +30,20 @@ const EXAMPLES = [
 
 const CLOSE_OF_DAY = "How today go? Give me my close of day summary.";
 
+const DEMO_STEPS = [
+  "Record a sale",
+  "Add a debt",
+  "Ask who owes you",
+  "Compare AMIN prices",
+  "Get coach advice",
+];
+
+const JUDGE_WINS = [
+  { label: "Voice-first", value: "No forms" },
+  { label: "Local language", value: "Pidgin, Yoruba, Hausa, Igbo" },
+  { label: "Market network", value: "Prices traders can update" },
+];
+
 export default function TalkPage() {
   const [state, setState] = useState<BusinessState | null>(null);
   const [market, setMarket] = useState<MarketResult | null>(null);
@@ -45,23 +59,28 @@ export default function TalkPage() {
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  const refresh = useCallback(async () => {
-    try {
-      const r = await fetch("/api/state", { cache: "no-store" });
-      setState(await r.json());
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
   useEffect(() => {
-    refresh();
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch("/api/state", { cache: "no-store" });
+        const d = await r.json();
+        if (alive) setState(d);
+      } catch {
+        /* ignore */
+      }
+    })();
     const Ctor =
       typeof window !== "undefined"
         ? window.SpeechRecognition || window.webkitSpeechRecognition
         : undefined;
+    // One-time browser-capability detection (valid effect use; rule is a heuristic).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!Ctor) setSupported(false);
-  }, [refresh]);
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -71,10 +90,10 @@ export default function TalkPage() {
     (text: string) => {
       try {
         window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = lang;
-        u.rate = 1;
-        window.speechSynthesis.speak(u);
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        utterance.rate = 1;
+        window.speechSynthesis.speak(utterance);
       } catch {
         /* no tts */
       }
@@ -87,7 +106,7 @@ export default function TalkPage() {
       const clean = text.trim();
       if (!clean) return;
       setErr(null);
-      setTurns((t) => [...t, { role: "you", text: clean }]);
+      setTurns((items) => [...items, { role: "you", text: clean }]);
       setTranscript("");
       setTyped("");
       setThinking(true);
@@ -99,14 +118,14 @@ export default function TalkPage() {
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || "Request failed");
-        setTurns((t) => [...t, { role: "africhain", text: data.reply }]);
+        setTurns((items) => [...items, { role: "africhain", text: data.reply }]);
         setState(data.state);
         if (data.market) setMarket(data.market);
         speak(data.reply);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Something went wrong";
         setErr(msg);
-        setTurns((t) => [...t, { role: "africhain", text: "⚠️ " + msg }]);
+        setTurns((items) => [...items, { role: "africhain", text: `⚠️ ${msg}` }]);
       } finally {
         setThinking(false);
       }
@@ -137,8 +156,8 @@ export default function TalkPage() {
     };
     rec.onresult = (e: SpeechRecognitionEventLike) => {
       let interim = "";
-      for (let i = 0; i < e.results.length; i++) {
-        const res = e.results[i];
+      for (let index = 0; index < e.results.length; index++) {
+        const res = e.results[index];
         if (res.isFinal) finalText += res[0].transcript;
         else interim += res[0].transcript;
       }
@@ -157,136 +176,164 @@ export default function TalkPage() {
     recRef.current?.stop();
   }, []);
 
+  const hasChat = turns.length > 0 || thinking;
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 grid gap-6 lg:grid-cols-[1.15fr_1fr]">
-      {/* LEFT — Voice console */}
-      <section className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--green-2)]">
-            Talk to your business
-          </h1>
-          <p className="text-sm text-[var(--muted)]">
-            Speak in your language — record sales, debts, tasks and check market prices.
-          </p>
+    <main className="mx-auto grid max-w-6xl items-start gap-6 px-4 py-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="flex flex-col gap-5">
+        <div className="relative overflow-hidden rounded-3xl bg-green-2 p-5 text-cream sm:p-6">
+          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gold/20" />
+          <div className="relative">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold">
+              Africhain voice OS
+            </p>
+            <h1 className="max-w-2xl text-3xl font-black tracking-tight sm:text-5xl">
+              Talk to your business. It updates itself.
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm text-cream/85 sm:text-base">
+              Record sales, debts, stock, tasks and market prices by voice — in the language traders already use.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {JUDGE_WINS.map((item) => (
+                <div key={item.label} className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wide text-gold">{item.label}</p>
+                  <p className="text-xs font-semibold">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-5 shadow-sm">
-          <div className="flex flex-wrap gap-2 mb-4">
-            {LANGS.map((l) => (
+        <div className="card p-6">
+          <div className="mb-5 rounded-2xl border border-line bg-surface-sunken p-3">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+              Winning demo loop
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {DEMO_STEPS.map((step, index) => (
+                <span
+                  key={step}
+                  className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-green-2"
+                >
+                  {index + 1}. {step}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-6 flex flex-wrap justify-center gap-2">
+            {LANGS.map((item) => (
               <button
-                key={l.code}
-                onClick={() => setLang(l.code)}
-                className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                  lang === l.code
-                    ? "bg-[var(--green)] text-cream border-[var(--green)]"
-                    : "bg-transparent text-[var(--muted)] border-[var(--line)] hover:border-[var(--green)]"
+                key={item.code}
+                onClick={() => setLang(item.code)}
+                className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                  lang === item.code
+                    ? "border-green bg-green text-cream shadow-sm"
+                    : "border-line bg-transparent text-muted hover:border-green hover:text-green"
                 }`}
               >
-                {l.label}
+                {item.label}
               </button>
             ))}
           </div>
 
-          <div className="flex flex-col items-center py-4">
+          <div className="flex flex-col items-center">
             <button
               onClick={listening ? stopListening : startListening}
               disabled={thinking}
-              className={`h-28 w-28 rounded-full grid place-items-center text-cream text-4xl transition disabled:opacity-50 ${
-                listening ? "bg-[var(--terracotta)] listening" : "bg-[var(--green)] hover:bg-[var(--green-2)]"
+              className={`grid h-28 w-28 place-items-center rounded-full text-4xl text-cream shadow-lg transition-transform active:scale-95 disabled:opacity-50 ${
+                listening ? "listening bg-terracotta" : "bg-green hover:scale-[1.03] hover:bg-green-2"
               }`}
-              aria-label="Speak"
+              style={{ boxShadow: "var(--shadow-lg)" }}
+              aria-label={listening ? "Stop recording" : "Start recording"}
             >
-              {listening ? "◼" : "🎙"}
+              {listening ? "■" : "🎙️"}
             </button>
-            <p className="mt-3 text-sm text-[var(--muted)] h-5">
+            <p className="mt-4 h-5 text-sm font-medium text-muted">
               {thinking ? "Africhain dey think…" : listening ? "Listening… tap to stop" : "Tap and speak"}
             </p>
-            {transcript && (
-              <p className="mt-1 text-center text-[var(--ink)] font-medium fade-up">“{transcript}”</p>
-            )}
+            {transcript && <p className="fade-up mt-1 text-center font-medium text-ink">“{transcript}”</p>}
           </div>
 
           {!supported && (
-            <p className="text-xs text-[var(--terracotta)] text-center mb-2">
+            <p className="mt-4 text-center text-xs text-terracotta">
               Voice not supported in this browser — use Chrome, or type below.
             </p>
           )}
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              send(typed);
-            }}
-            className="flex gap-2"
-          >
-            <input
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-              placeholder="…or type what you would say"
-              className="flex-1 rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--green)]"
-            />
-            <button
-              type="submit"
-              disabled={thinking || !typed.trim()}
-              className="rounded-lg bg-[var(--gold)] hover:bg-[var(--gold-2)] text-[var(--green-2)] font-semibold px-4 text-sm disabled:opacity-50"
+          <div className="mt-6 flex gap-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                send(typed);
+              }}
+              className="flex flex-1 gap-2"
             >
-              Send
-            </button>
-          </form>
-
-          <div className="mt-3 flex items-center gap-2">
+              <input
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                placeholder="…or type what you would say"
+                className="flex-1 rounded-xl border border-line bg-surface-sunken px-4 py-2.5 text-sm outline-none transition focus:border-green focus:bg-white"
+              />
+              <button
+                type="submit"
+                disabled={thinking || !typed.trim()}
+                className="rounded-xl bg-gold px-4 text-sm font-semibold text-green-2 transition hover:bg-gold-2 disabled:opacity-50"
+              >
+                Send
+              </button>
+            </form>
             <button
               onClick={() => send(CLOSE_OF_DAY)}
               disabled={thinking}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--green)] text-cream hover:bg-[var(--green-2)] transition disabled:opacity-50"
+              title="Get your close-of-day summary"
+              className="shrink-0 rounded-xl bg-green px-3.5 text-sm font-semibold text-cream transition hover:bg-green-2 disabled:opacity-50"
             >
-              📋 Close of day
+              📋
             </button>
-            <span className="text-[11px] text-[var(--muted)]">or tap an example:</span>
-          </div>
-
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                onClick={() => send(ex)}
-                disabled={thinking}
-                className="text-[11px] px-2 py-1 rounded-md bg-[var(--cream-2)] text-[var(--muted)] hover:text-[var(--ink)] transition disabled:opacity-50"
-              >
-                {ex}
-              </button>
-            ))}
           </div>
         </div>
 
-        {/* Conversation */}
-        <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-4 shadow-sm min-h-[160px]">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">
-            Conversation
-          </h2>
-          {turns.length === 0 && !thinking ? (
-            <p className="text-sm text-[var(--muted)]">
-              Say something like “I sell five basket of tomato for two thousand”.
-            </p>
+        <div className="card min-h-50 p-5">
+          <h2 className="eyebrow mb-3">Conversation</h2>
+          {!hasChat ? (
+            <div className="py-2">
+              <p className="mb-3 text-sm text-muted">
+                Try one of these — or say it in your own words:
+              </p>
+              <div className="flex flex-col gap-2">
+                {EXAMPLES.map((example) => (
+                  <button
+                    key={example}
+                    onClick={() => send(example)}
+                    className="rounded-xl border border-line bg-surface-sunken px-3.5 py-2.5 text-left text-sm text-ink transition hover:border-green hover:bg-white"
+                  >
+                    <span className="mr-1.5 text-muted">“</span>
+                    {example}
+                    <span className="ml-0.5 text-muted">”</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           ) : (
-            <div className="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
-              {turns.map((t, i) => (
+            <div className="flex max-h-[22rem] flex-col gap-2.5 overflow-y-auto pr-1">
+              {turns.map((turn, index) => (
                 <div
-                  key={i}
-                  className={`fade-up max-w-[85%] rounded-2xl px-3.5 py-2 text-sm ${
-                    t.role === "you"
-                      ? "self-end bg-[var(--green)] text-cream"
-                      : "self-start bg-[var(--cream-2)] text-[var(--ink)]"
+                  key={index}
+                  className={`fade-up max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm ${
+                    turn.role === "you"
+                      ? "self-end rounded-br-md bg-green text-cream"
+                      : "self-start rounded-bl-md bg-cream-2 text-ink"
                   }`}
                 >
-                  {t.text}
+                  {turn.text}
                 </div>
               ))}
               {thinking && (
-                <div className="self-start bg-[var(--cream-2)] rounded-2xl px-4 py-3 flex gap-1.5">
-                  <span className="dot h-2 w-2 rounded-full bg-[var(--muted)]" />
-                  <span className="dot h-2 w-2 rounded-full bg-[var(--muted)]" />
-                  <span className="dot h-2 w-2 rounded-full bg-[var(--muted)]" />
+                <div className="self-start rounded-2xl rounded-bl-md bg-cream-2 px-4 py-3 flex gap-1.5">
+                  <span className="dot h-2 w-2 rounded-full bg-muted" />
+                  <span className="dot h-2 w-2 rounded-full bg-muted" />
+                  <span className="dot h-2 w-2 rounded-full bg-muted" />
                 </div>
               )}
               <div ref={logEndRef} />
@@ -297,28 +344,49 @@ export default function TalkPage() {
         {market && <MarketPanel m={market} />}
       </section>
 
-      {/* RIGHT — compact snapshot + coach */}
-      <section className="flex flex-col gap-4">
-        <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
+      <section className="flex flex-col gap-4 lg:sticky lg:top-20">
+        <div className="card p-4">
+          <div className="mb-3 flex items-center justify-between">
             <h2 className="font-bold">{state?.business || "Your shop"}</h2>
-            <Link href="/business" className="text-xs font-semibold text-[var(--green)] hover:underline">
+            <Link href="/business" className="text-xs font-semibold text-green hover:underline">
               Full dashboard →
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             <Mini label="Today revenue" value={state ? NGN(state.today.revenue) : "—"} accent="var(--green)" />
             <Mini label="Profit" value={state ? NGN(state.today.profit) : "—"} accent="var(--green-2)" />
             <Mini label="Sales" value={state ? String(state.today.salesCount) : "—"} />
-            <Mini label="Owed to you" value={state ? NGN(state.totals.outstandingDebt) : "—"} accent="var(--terracotta)" />
+            <Mini
+              label="Owed to you"
+              value={state ? NGN(state.totals.outstandingDebt) : "—"}
+              accent="var(--terracotta)"
+            />
+          </div>
+        </div>
+
+        <div className="card p-4">
+          <p className="eyebrow mb-3">Why this can win</p>
+          <div className="space-y-3 text-sm">
+            <p>
+              <span className="font-semibold text-green-2">Unforgettable demo:</span>{" "}
+              one spoken sentence visibly changes books, debt, market intelligence and coaching.
+            </p>
+            <p>
+              <span className="font-semibold text-green-2">Big wedge:</span>{" "}
+              AMIN turns bookkeeping into a trader data network judges can imagine scaling.
+            </p>
+            <p>
+              <span className="font-semibold text-green-2">Clear next step:</span>{" "}
+              verified market reports unlock group buying, credit and insurance.
+            </p>
           </div>
         </div>
 
         {state?.coach && (
-          <div className="rounded-2xl bg-[var(--green-2)] text-cream p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-1.5">
+          <div className="rounded-2xl bg-green-2 p-4 text-cream" style={{ boxShadow: "var(--shadow-md)" }}>
+            <div className="mb-1.5 flex items-center gap-2">
               <span className="text-lg">🧠</span>
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--gold)]">
+              <h2 className="text-[11px] font-semibold uppercase tracking-wide text-gold">
                 AI Business Coach
               </h2>
             </div>
@@ -328,22 +396,23 @@ export default function TalkPage() {
 
         <Link
           href="/market"
-          className="rounded-2xl border-2 border-[var(--gold)] bg-white p-4 shadow-sm hover:bg-[var(--cream-2)] transition"
+          className="group rounded-2xl border-2 border-gold/60 bg-surface p-4 transition hover:-translate-y-0.5 hover:border-gold"
+          style={{ boxShadow: "var(--shadow-sm)" }}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-bold text-[var(--green-2)]">🌍 AMIN Live Market</p>
-              <p className="text-xs text-[var(--muted)]">
-                Live prices across markets — updated by traders
-              </p>
+              <p className="font-bold text-green-2">🌍 AMIN Live Market</p>
+              <p className="text-xs text-muted">Live prices across markets — updated by traders</p>
             </div>
-            <span className="text-[var(--green)] font-semibold text-sm">Open →</span>
+            <span className="text-sm font-semibold text-green transition group-hover:translate-x-0.5">
+              Open →
+            </span>
           </div>
         </Link>
       </section>
 
       {err && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[var(--terracotta)] text-white text-xs px-3 py-2 rounded-lg shadow">
+        <div className="fade-up fixed bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-terracotta px-3 py-2 text-xs text-white shadow-lg">
           {err}
         </div>
       )}
@@ -353,9 +422,9 @@ export default function TalkPage() {
 
 function Mini({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
-    <div className="rounded-xl border border-[var(--line)] bg-white p-3">
-      <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">{label}</p>
-      <p className="text-lg font-bold mt-0.5" style={{ color: accent }}>
+    <div className="rounded-xl border border-line bg-surface-sunken p-3">
+      <p className="text-[11px] uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-0.5 text-lg font-bold tabular-nums" style={{ color: accent }}>
         {value}
       </p>
     </div>
