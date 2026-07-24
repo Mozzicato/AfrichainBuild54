@@ -30,12 +30,12 @@ const EXAMPLES = [
 
 const CLOSE_OF_DAY = "How today go? Give me my close of day summary.";
 
-const DEMO_STEPS = [
-  "Record a sale",
-  "Add a debt",
-  "Ask who owes you",
-  "Compare AMIN prices",
-  "Get coach advice",
+const QUICK_ACTIONS = [
+  "Record sales",
+  "Track debt",
+  "Check stock",
+  "Compare prices",
+  "Get advice",
 ];
 
 const JUDGE_WINS = [
@@ -207,15 +207,15 @@ export default function TalkPage() {
         <div className="card p-6">
           <div className="mb-5 rounded-2xl border border-line bg-surface-sunken p-3">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
-              Winning demo loop
+              Quick actions
             </p>
             <div className="flex flex-wrap gap-2">
-              {DEMO_STEPS.map((step, index) => (
+              {QUICK_ACTIONS.map((step) => (
                 <span
                   key={step}
                   className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-green-2"
                 >
-                  {index + 1}. {step}
+                  {step}
                 </span>
               ))}
             </div>
@@ -365,19 +365,19 @@ export default function TalkPage() {
         </div>
 
         <div className="card p-4">
-          <p className="eyebrow mb-3">Why this can win</p>
+          <p className="eyebrow mb-3">Business edge</p>
           <div className="space-y-3 text-sm">
             <p>
-              <span className="font-semibold text-green-2">Unforgettable demo:</span>{" "}
-              one spoken sentence visibly changes books, debt, market intelligence and coaching.
+              <span className="font-semibold text-green-2">No more lost sales:</span>{" "}
+              every voice note becomes a clean business record you can trust later.
             </p>
             <p>
-              <span className="font-semibold text-green-2">Big wedge:</span>{" "}
-              AMIN turns bookkeeping into a trader data network judges can imagine scaling.
+              <span className="font-semibold text-green-2">Buy smarter:</span>{" "}
+              AMIN shows where prices are low before you restock or travel to market.
             </p>
             <p>
-              <span className="font-semibold text-green-2">Clear next step:</span>{" "}
-              verified market reports unlock group buying, credit and insurance.
+              <span className="font-semibold text-green-2">Know your next move:</span>{" "}
+              the coach turns today&apos;s numbers into simple advice for tomorrow.
             </p>
           </div>
         </div>

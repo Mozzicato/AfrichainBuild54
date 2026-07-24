@@ -38,25 +38,25 @@ export default function BusinessPage() {
       <section className="mt-6">
         <div className="card p-5">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gold-2">
-            Where this goes
+            What Africhain helps you do
           </p>
           <div className="grid gap-3 text-sm sm:grid-cols-3">
             <div>
-              <p className="font-semibold text-green-2">Today (MVP)</p>
+              <p className="font-semibold text-green-2">Keep clean books</p>
               <p className="text-muted">
-                Voice bookkeeping, debts, tasks, stock and AMIN prices — in local language.
+                Sales, debts, tasks and stock stay organised from ordinary speech.
               </p>
             </div>
             <div>
-              <p className="font-semibold text-green-2">AMIN network</p>
+              <p className="font-semibold text-green-2">Restock with confidence</p>
               <p className="text-muted">
-                Live crowdsourced prices today; verified exchange and government feeds next.
+                Compare market prices before you buy, sell or send someone to market.
               </p>
             </div>
             <div>
-              <p className="font-semibold text-green-2">The platform</p>
+              <p className="font-semibold text-green-2">Grow with proof</p>
               <p className="text-muted">
-                Group buying, predictive intelligence, embedded lending and insurance.
+                Your records become evidence for better decisions, credit and partnerships.
               </p>
             </div>
           </div>
