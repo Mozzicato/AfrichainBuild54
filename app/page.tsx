@@ -371,7 +371,7 @@ export default function TalkPage() {
               ))}
             </div>
           ) : (
-            <div className="flex max-h-[22rem] flex-col gap-2.5 overflow-y-auto pr-1">
+            <div className="flex max-h-88 flex-col gap-2.5 overflow-y-auto pr-1">
               {turns.map((turn, index) => (
                 <div
                   key={index}
