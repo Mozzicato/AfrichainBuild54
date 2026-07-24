@@ -20,9 +20,13 @@ const EXAMPLES = [
   "Mama Nkechi collect two bag of sugar, she never pay, na five thousand",
   "Who dey owe me?",
   "How much yam dey for Sokoto today?",
+  "Wetin dey finish for my shop?",
+  "I buy ten bag of sugar, add am to stock",
   "Tell Chidi make e sweep the shop",
   "Any advice for me?",
 ];
+
+const CLOSE_OF_DAY = "How today go? Give me my close of day summary.";
 
 export default function Home() {
   const [state, setState] = useState<BusinessState | null>(null);
@@ -259,7 +263,20 @@ export default function Home() {
               </button>
             </form>
 
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                onClick={() => send(CLOSE_OF_DAY)}
+                disabled={thinking}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--green)] text-cream hover:bg-[var(--green-2)] transition disabled:opacity-50"
+              >
+                📋 Close of day
+              </button>
+              <span className="text-[11px] text-[var(--muted)]">
+                or tap an example:
+              </span>
+            </div>
+
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {EXAMPLES.map((ex) => (
                 <button
                   key={ex}
@@ -456,6 +473,36 @@ function Dashboard({ state }: { state: BusinessState | null }) {
             ))}
           </ul>
         )}
+      </div>
+
+      {/* Inventory */}
+      <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+            Stock
+          </h2>
+          {state.lowStock.length > 0 && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--terracotta)]/15 text-[var(--terracotta)]">
+              {state.lowStock.length} running low
+            </span>
+          )}
+        </div>
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+          {state.inventory.map((it) => {
+            const low = it.qty <= it.lowAt;
+            return (
+              <li key={it.id} className="flex items-center justify-between text-sm">
+                <span className={low ? "text-[var(--terracotta)] font-medium" : ""}>
+                  {it.item}
+                </span>
+                <span className={`font-semibold ${low ? "text-[var(--terracotta)]" : "text-[var(--ink)]"}`}>
+                  {it.qty} {it.unit}
+                  {low && " ⚠"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       {/* Recent sales */}

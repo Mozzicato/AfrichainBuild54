@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { DB, BusinessState, Sale, Expense, Debt, Task } from "./types";
+import { DB, BusinessState, Sale, Expense, Debt, Task, InventoryItem } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "db.json");
@@ -41,6 +41,15 @@ function seed(): DB {
     tasks: [
       { id: id(), who: "Chidi", task: "sweep the shop and arrange shelf", done: false, ts: daysAgo(0) },
       { id: id(), who: "Blessing", task: "count remaining bags of rice", done: true, ts: daysAgo(1) },
+    ],
+    inventory: [
+      { id: id(), item: "rice", qty: 12, unit: "paint", lowAt: 5 },
+      { id: id(), item: "sugar", qty: 3, unit: "bag", lowAt: 4 }, // low
+      { id: id(), item: "tomato", qty: 4, unit: "basket", lowAt: 5 }, // low
+      { id: id(), item: "milk", qty: 40, unit: "tin", lowAt: 12 },
+      { id: id(), item: "bread", qty: 9, unit: "loaf", lowAt: 6 },
+      { id: id(), item: "groundnut oil", qty: 8, unit: "bottle", lowAt: 6 },
+      { id: id(), item: "maggi", qty: 5, unit: "roll", lowAt: 4 },
     ],
   };
 }
@@ -93,8 +102,56 @@ export function addSale(item: string, qty: number, unit: string, amount: number)
   const db = load();
   const s: Sale = { id: id(), item, qty, unit, amount, ts: Date.now() };
   db.sales.push(s);
+  // draw down stock if we track this item
+  const inv = db.inventory.find(
+    (i) => i.item.toLowerCase() === item.toLowerCase() || item.toLowerCase().includes(i.item.toLowerCase())
+  );
+  if (inv) inv.qty = Math.max(0, inv.qty - qty);
   persist();
   return s;
+}
+
+export function restockItem(item: string, qty: number, unit?: string): InventoryItem {
+  const db = load();
+  const existing = db.inventory.find(
+    (i) => i.item.toLowerCase() === item.toLowerCase() || item.toLowerCase().includes(i.item.toLowerCase())
+  );
+  if (existing) {
+    existing.qty += qty;
+    if (unit) existing.unit = unit;
+    persist();
+    return existing;
+  }
+  const it: InventoryItem = { id: id(), item, qty, unit: unit || "unit", lowAt: 3 };
+  db.inventory.push(it);
+  persist();
+  return it;
+}
+
+function lowStockItems(db: DB): InventoryItem[] {
+  return db.inventory.filter((i) => i.qty <= i.lowAt);
+}
+
+export function dailyReport(): string {
+  const db = load();
+  const t0 = startOfToday();
+  const todaySales = db.sales.filter((s) => s.ts >= t0);
+  const revenue = todaySales.reduce((a, s) => a + s.amount, 0);
+  const expenses = db.expenses.filter((e) => e.ts >= t0).reduce((a, e) => a + e.amount, 0);
+  const debt = db.debts.reduce((a, d) => a + d.amount, 0);
+  const low = lowStockItems(db).map((i) => i.item);
+
+  // top item today by revenue
+  const byItem: Record<string, number> = {};
+  for (const s of todaySales) byItem[s.item] = (byItem[s.item] || 0) + s.amount;
+  const top = Object.entries(byItem).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+  const parts: string[] = [];
+  parts.push(`Today you make ${todaySales.length} sale${todaySales.length === 1 ? "" : "s"}, revenue ₦${revenue.toLocaleString()}, profit ₦${(revenue - expenses).toLocaleString()}.`);
+  if (top) parts.push(`Your best today na ${top}.`);
+  if (debt > 0) parts.push(`People still owe you ₦${debt.toLocaleString()}.`);
+  if (low.length) parts.push(`Restock soon: ${low.join(", ")}.`);
+  return parts.join(" ");
 }
 
 export function addExpense(category: string, amount: number, note?: string): Expense {
@@ -179,6 +236,10 @@ export function getState(): BusinessState {
     recentSales: [...db.sales].sort((a, b) => b.ts - a.ts).slice(0, 6),
     debts: [...db.debts].sort((a, b) => b.amount - a.amount),
     tasks: [...db.tasks].sort((a, b) => Number(a.done) - Number(b.done) || b.ts - a.ts),
+    inventory: [...db.inventory].sort(
+      (a, b) => Number(a.qty > a.lowAt) - Number(b.qty > b.lowAt) || a.item.localeCompare(b.item)
+    ),
+    lowStock: lowStockItems(db).map((i) => i.item),
     coach: coachInsight(),
   };
 }
@@ -206,10 +267,12 @@ export function coachInsight(): string {
   const topItem = Object.entries(byItem).sort((a, b) => b[1] - a[1])[0]?.[0];
 
   const debt = db.debts.reduce((a, d) => a + d.amount, 0);
+  const low = lowStockItems(db).map((i) => i.item);
 
   const tips: string[] = [];
   tips.push(`You dey sell pass on ${WEEKDAYS[bestDay]} — make sure your shelf full that day.`);
-  if (topItem) tips.push(`${topItem} na your best seller. Restock am before e finish.`);
+  if (low.length) tips.push(`${low.join(" and ")} don dey finish — restock am before e cut.`);
+  else if (topItem) tips.push(`${topItem} na your best seller. Keep am well stocked.`);
   if (debt > 0) tips.push(`People owe you ₦${debt.toLocaleString()}. Follow up small make your cash no lock.`);
 
   return tips.join(" ");

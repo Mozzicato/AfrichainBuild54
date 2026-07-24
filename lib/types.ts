@@ -31,12 +31,21 @@ export type Task = {
   ts: number;
 };
 
+export type InventoryItem = {
+  id: string;
+  item: string;
+  qty: number;
+  unit: string;
+  lowAt: number; // low-stock threshold
+};
+
 export type DB = {
   business: string;
   sales: Sale[];
   expenses: Expense[];
   debts: Debt[];
   tasks: Task[];
+  inventory: InventoryItem[];
 };
 
 export type BusinessState = {
@@ -54,5 +63,7 @@ export type BusinessState = {
   recentSales: Sale[];
   debts: Debt[];
   tasks: Task[];
+  inventory: InventoryItem[];
+  lowStock: string[];
   coach: string;
 };

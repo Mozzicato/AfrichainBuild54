@@ -5,6 +5,8 @@ import {
   settleDebt,
   assignTask,
   completeTask,
+  restockItem,
+  dailyReport,
   getState,
   coachInsight,
 } from "./store";
@@ -160,6 +162,43 @@ const tools: ToolDef[] = [
   {
     type: "function",
     function: {
+      name: "restock",
+      description: "Add stock the trader just bought or received into inventory.",
+      parameters: {
+        type: "object",
+        properties: {
+          item: { type: "string" },
+          qty: { type: "number", description: "quantity added" },
+          unit: { type: "string", description: "unit, e.g. bag, paint, basket" },
+        },
+        required: ["item", "qty"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "check_stock",
+      description: "Check inventory levels or what is running low.",
+      parameters: {
+        type: "object",
+        properties: {
+          item: { type: "string", description: "optional specific item to check" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "daily_report",
+      description: "Give the close-of-day summary: today's sales, revenue, profit, best item, debts and what to restock.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "get_coach_insight",
       description: "Give a proactive, data-driven business tip based on the trader's own records.",
       parameters: { type: "object", properties: {} },
@@ -226,6 +265,24 @@ function runTool(name: string, input: ToolInput): { result: string; market?: Mar
         result: `${m.commodity} (${m.unit}) today: ${list}. ${m.recommendation}`,
         market: m,
       };
+    }
+    case "restock": {
+      const it = restockItem(str(input.item, "item"), num(input.qty, 1), str(input.unit) || undefined);
+      return { result: `Restocked ${it.item}. Now ${it.qty} ${it.unit} in stock.` };
+    }
+    case "check_stock": {
+      const st = getState();
+      const item = str(input.item);
+      if (item) {
+        const found = st.inventory.find((i) => i.item.toLowerCase().includes(item.toLowerCase()));
+        if (!found) return { result: `You never add ${item} to your stock list.` };
+        return { result: `${found.item}: ${found.qty} ${found.unit} left${found.qty <= found.lowAt ? " — dey run low, restock soon." : "."}` };
+      }
+      if (st.lowStock.length === 0) return { result: `Your stock still okay, nothing dey finish.` };
+      return { result: `These items dey run low: ${st.lowStock.join(", ")}. Restock them soon.` };
+    }
+    case "daily_report": {
+      return { result: dailyReport() };
     }
     case "get_coach_insight": {
       return { result: coachInsight() };
